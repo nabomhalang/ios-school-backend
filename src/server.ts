@@ -1,25 +1,15 @@
 
 
-import express, { Application, Router } from "express";
-import fs from "fs";
-import RouterBase from "./model/RouterBase";
+import express, { Application, NextFunction, Request, Response, Router } from "express";
 
 
 export class Server {
     public server: Application;
 
-    /**
-     * 
-     * @param port Port Application listens on
-     * @param middleware Array of middleware to be applied to server 
-     * @param routes Array of express.Router objects for application routes
-     * @param apiPath path to api routes
-     * @param staticPath path to folder for public files express will make available
-     */
     constructor(
-        private port: number | string,
+        private port: number,
         middlewares: Array<any>,
-        routers: Array<Router> = fs.readdirSync("src/routes").map((route: string) => { return (require(`./routes/${route}`)).default as Router }),
+        routers: Router = require("./routes").default,
         private staticPath: string = "public",
         private apiPath: string = "/api"
     ) {
@@ -27,6 +17,7 @@ export class Server {
         this.middlewares(middlewares);
         this.router(routers);
         this.static();
+        this.defaultRoute();
     }
 
     private middlewares(middlewares: Array<any>): void {
@@ -39,19 +30,36 @@ export class Server {
         this.server.use(middlewares);
     }
 
-    private router(routers: Array<Router>): void {
-        routers.forEach((controller: Router) => {
-            this.server.use(this.apiPath, controller);
-        });
+    private router(router: Router): void {
+        this.server.use(this.apiPath, router);
     }
 
     private static(): void {
         this.server.use(express.static(this.staticPath));
     }
 
-    public listen(): void {
+    public async listen(): Promise<void> {
         this.server.listen(this.port, () => {
             console.log(`server listening on the port ${this.port}`);
+        });
+    }
+
+    private defaultRoute(): void {
+        this.server.use((req: Request, res: Response, next: NextFunction) => {
+            res.status(404).json({
+                c: 404,
+                d: null,
+                m: "Not found"
+            })
+        });
+
+        this.server.use((err: any, req: Request, res: Response, next: NextFunction) => {
+            if (err) console.log(err);
+            res.status(500).json({
+                c: 500,
+                d: null,
+                m: "Internal server error"
+            });
         });
     }
 }
