@@ -2,7 +2,6 @@
 
 import express, { Application, NextFunction, Request, Response, Router } from "express";
 
-
 export class Server {
     public server: Application;
 

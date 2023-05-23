@@ -3,7 +3,6 @@ import { AnySchema } from "yup";
 
 
 export const validator = (req: Request, res: Response, next: NextFunction, scheme: AnySchema<any>) => {
-    console.log(scheme, req.body)
     scheme.validate(req.body).then((v: any) => {
         req.body = v;
         next();
